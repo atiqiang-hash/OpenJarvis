@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NABILA · ATI's AI</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- ================= Left floating dock =================
+           Plan B (handoff §13): floating panels, NOT a 3-column grid.
+           They overlay the stage and never steal layout space. -->
+      <aside class="dock">
+        <section class="panel models">
+          <div class="panel__title">Model</div>
+          <ul class="model-list" id="model-list">
+            <li class="model-loading">Loading…</li>
+          </ul>
+          <label class="deep-toggle">
+            <input type="checkbox" id="deep-toggle" />
+            <span>Deep mode</span>
+          </label>
+          <div class="panel-foot">
+            <button class="mini-btn" id="reset-btn" title="Clear conversation">⟲ Reset</button>
+            <span class="mini-btn ghost" id="backend-info">·</span>
+          </div>
+        </section>
+
+        <!-- wake debug — small, left (handoff §11: 缩小放左) -->
+        <section class="panel wake">
+          <div class="panel__title">
+            <span class="wake-dot" id="wake-dot"></span> Wake
+          </div>
+          <div class="wake-log" id="wake-log"></div>
+        </section>
+      </aside>
+
+      <!-- ================= Center stage ================= -->
+      <main class="stage">
+        <div class="avatar" id="avatar">
+          <div class="avatar__orb"></div>
+          <div class="avatar__name">NABILA</div>
+          <div class="avatar__status" id="avatar-status">Idle</div>
+        </div>
+
+        <div class="conversation" id="conversation"></div>
+      </main>
+
+      <!-- ================= Bottom composer ================= -->
+      <footer class="composer">
+        <button class="icon-btn" id="mic-btn" title="Click to talk (6s)">🎤</button>
+        <button class="icon-btn" id="cam-btn" title="Camera — coming in v0.8">📷</button>
+        <button class="icon-btn" id="clip-btn" title="Attach — coming soon">📎</button>
+        <input
+          class="composer__input"
+          id="composer-input"
+          type="text"
+          placeholder="Ask NABILA…   (or say “NABILA 同学” to wake)"
+          autocomplete="off"
+        />
+        <button class="send-btn" id="send-btn">Send</button>
+      </footer>
+
+      <audio id="player" hidden></audio>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

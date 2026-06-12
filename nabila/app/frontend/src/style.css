@@ -1,0 +1,283 @@
+/* ===========================================================================
+   NABILA UI — rewritten layout (handoff §11 + §13 Plan B)
+
+   Goals ATI explicitly asked for:
+     - Model list   -> top-left
+     - Wake debug   -> small, left
+     - NABILA avatar-> centered, does not move
+     - Conversation -> center, full width
+     - Composer     -> bottom bar: 🎤 📷 📎 [input] [Send]
+   Anti-goals (things ATI disliked in v0.7.3):
+     - NO 3-column grid slicing the screen
+     - NO oversized wake debug
+   Technique: flexbox stage + ABSOLUTE/FIXED floating panels that overlay,
+   never steal layout space (like Cursor / Claude.ai side panels).
+   =========================================================================== */
+
+:root {
+  --bg: #0e0f13;
+  --panel: rgba(26, 28, 36, 0.72);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text: #e8eaf0;
+  --muted: #8b90a0;
+  --accent: #19c37d;        /* DeepSeek green — the default/selected highlight */
+  --user: #2b6cff;
+  --assistant: #1f2230;
+  --err-bg: #3a1d1d;
+  --err-border: #5b2b2b;
+  --radius: 14px;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 50% -10%, #1b1e27 0%, var(--bg) 60%);
+}
+
+.app { position: relative; height: 100vh; overflow: hidden; }
+
+/* ----------------------------- Left dock ----------------------------------- */
+.dock {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 20;
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+}
+
+.panel {
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.panel__title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* model list */
+.model-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.model-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-size: 13px;
+  transition: 0.15s;
+}
+.model-item:hover { background: rgba(255, 255, 255, 0.05); }
+.model-item .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--muted); flex: 0 0 auto;
+}
+.model-item .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.model-item .sub { margin-left: auto; font-size: 10px; color: var(--muted); }
+.model-item.selected {
+  background: rgba(25, 195, 125, 0.12);
+  border-color: rgba(25, 195, 125, 0.45);
+  color: #d6ffe9;
+}
+.model-item.selected .dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.model-loading { color: var(--muted); font-size: 12px; padding: 6px 4px; }
+
+.deep-toggle {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; font-size: 12px; color: var(--muted); cursor: pointer;
+}
+.deep-toggle input { accent-color: var(--accent); }
+
+.panel-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.mini-btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.mini-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.2); }
+.mini-btn.ghost { border: none; cursor: default; }
+
+/* wake panel (kept small) */
+.wake .wake-log {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-height: 116px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.wake-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; transition: 0.2s; }
+.wake-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 1.6s infinite; }
+.wake-dot.err { background: #ef4444; }
+
+/* ----------------------------- Center stage -------------------------------- */
+.stage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 124px;
+}
+
+.avatar {
+  position: sticky;
+  top: 0;
+  padding-top: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 5;
+}
+.avatar__orb {
+  width: 118px; height: 118px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #7af0c0, #19c37d 45%, #0e7a55 100%);
+  box-shadow: 0 10px 40px rgba(25, 195, 125, 0.25);
+  animation: breathe 4s ease-in-out infinite;
+}
+.avatar__name { font-weight: 600; letter-spacing: 0.08em; }
+.avatar__status { font-size: 12px; color: var(--muted); min-height: 16px; }
+
+.avatar.listening .avatar__orb { animation: ring 1.3s infinite; }
+.avatar.thinking .avatar__orb {
+  background: radial-gradient(circle at 32% 28%, #ffd479, #f5a524 50%, #9a6206 100%);
+  box-shadow: 0 0 0 6px rgba(245, 165, 36, 0.16), 0 10px 40px rgba(245, 165, 36, 0.25);
+}
+.avatar.speaking .avatar__orb {
+  background: radial-gradient(circle at 32% 28%, #9cc4ff, #3b82f6 50%, #1d4ed8 100%);
+  animation: ripple 1s infinite;
+}
+
+/* conversation */
+.conversation {
+  width: 100%;
+  max-width: 720px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 4px 10px;
+  overflow-y: auto;
+}
+.bubble {
+  max-width: 82%;
+  padding: 11px 14px;
+  border-radius: 16px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.bubble.user {
+  align-self: flex-end;
+  background: var(--user);
+  color: #fff;
+  border-bottom-right-radius: 5px;
+}
+.bubble.assistant {
+  align-self: flex-start;
+  background: var(--assistant);
+  border: 1px solid var(--panel-border);
+  border-bottom-left-radius: 5px;
+}
+.bubble.error {
+  align-self: flex-start;
+  background: var(--err-bg);
+  border: 1px solid var(--err-border);
+  color: #ffd9d9;
+}
+.bubble__meta { font-size: 10.5px; color: var(--muted); margin-top: 6px; }
+
+/* ----------------------------- Composer ------------------------------------ */
+.composer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 16px 18px;
+}
+.icon-btn {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.15s;
+}
+.icon-btn:hover { border-color: rgba(255, 255, 255, 0.2); }
+.icon-btn.recording { background: #ef4444; border-color: #ef4444; animation: pulse 1s infinite; }
+.composer__input {
+  flex: 1; min-width: 0;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text);
+  padding: 0 16px;
+  font-size: 14.5px;
+  outline: none;
+}
+.composer__input:focus { border-color: rgba(25, 195, 125, 0.5); }
+.send-btn {
+  height: 46px; padding: 0 20px;
+  border-radius: 14px; border: none;
+  background: var(--accent); color: #04130c;
+  font-weight: 600; cursor: pointer;
+  transition: 0.15s;
+}
+.send-btn:hover { filter: brightness(1.06); }
+.send-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ----------------------------- Animations ---------------------------------- */
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes ring {
+  0%   { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0.45); }
+  70%  { box-shadow: 0 0 0 18px rgba(25, 195, 125, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(25, 195, 125, 0); }
+}
+@keyframes ripple { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* keep the dock from crowding the conversation on narrow windows */
+@media (max-width: 900px) { .dock { width: 188px; } }
