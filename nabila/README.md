@@ -54,22 +54,19 @@ cd app/frontend && npm install && npm run dev
 Your `backend/main.py`, `backend/tools.py`, and `identity/.env` stay exactly as
 they are.
 
-## Backend contract it expects (handoff §7/§8 — already implemented in v0.7.3)
+## Backend contract it targets (confirmed against `main.py`)
 
-| Endpoint | Method | Notes |
-|---|---|---|
-| `/api/models` | GET | string[] **or** `{models:[…]}` **or** `{deepseek:[…],ollama:[…]}` — all normalized. |
-| `/api/status` | GET | optional; reads `model` / `voice` if present. |
-| `/api/chat` | POST | body `{message, history, mode, model, speak}` → `{reply, audio_base64, voice_name, model?}`. |
-| `/api/voice` | POST | multipart field **`audio`** → `{reply, audio_base64, voice_name, transcript?}`. |
-| `/api/greeting` | GET | audio response **or** `{audio_base64}` — both handled. |
-| `/api/reset` | POST | clears server-side conversation state. |
+| Endpoint | Method | Request | Response keys read |
+|---|---|---|---|
+| `/api/models` | GET | — | `{ default, models:[{ id, name, type, recommended }] }` |
+| `/api/status` | GET | — | `model` / `voice` (best effort) |
+| `/api/chat` | POST | JSON `{ message, history, mode:"deep"\|"local", model, speak }` | `reply`, `audio_base64`, `voice_name`, `model` |
+| `/api/voice` | POST | multipart `audio` + `mode` + `model` + `history`(JSON string) | **`user_text`**, `reply`, `audio_base64`, `voice_name`, `model` |
+| `/api/greeting` | GET | — | audio body **or** `{ audio_base64 }` |
+| `/api/reset` | POST | — | — |
 
-### Two things to check against your backend
-
-1. **Voice upload field name.** The frontend posts the recording as
-   `audio`. If `main.py` expects a different name (e.g. `file`), change the
-   `VOICE_FIELD` constant at the top of `src/main.ts` (one line).
-2. **Response keys.** It reads `reply` / `audio_base64` / `voice_name` /
-   `transcript`, with fallbacks (`text`, `message`, `heard`, `stt`). If your
-   field names differ, adjust `handleResponse()` in `src/main.ts`.
+- `mode` is `"deep"` when the **Deep mode** toggle is on, else `"local"`.
+- Voice posts `mode` / `model` / `history` too, so speaking honours the model
+  picker just like typing does.
+- If any field name ever drifts, the two spots to touch are `VOICE_FIELD`
+  (top of `src/main.ts`) and `handleResponse()` / `normalizeModels()`.

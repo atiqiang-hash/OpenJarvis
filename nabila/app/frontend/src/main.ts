@@ -177,9 +177,13 @@ function prettyLabel(id: string): string {
   return /^deepseek/i.test(id) ? 'DeepSeek' : id;
 }
 
-// The backend's exact shape isn't pinned down in the handoff, so accept the
-// common ones: string[], {models:[...]}, or grouped {deepseek:[...],ollama:[...]}.
+// Backend shape (confirmed): { default: "deepseek-chat", models: [{ id, name,
+// type: "cloud"|"local", recommended, ... }] }. Still tolerate string[] and
+// grouped {deepseek:[...],ollama:[...]} so this never breaks on a backend tweak.
 function normalizeModels(data: any): ModelEntry[] {
+  const defaultId: string | undefined =
+    data && typeof data === 'object' && typeof data.default === 'string' ? data.default : undefined;
+
   const raw: any[] = [];
   if (Array.isArray(data)) {
     raw.push(...data);
@@ -197,15 +201,15 @@ function normalizeModels(data: any): ModelEntry[] {
   const out: ModelEntry[] = [];
   for (const item of raw) {
     if (typeof item === 'string') {
-      out.push({ id: item, label: prettyLabel(item), provider: guessProvider(item) });
+      out.push({ id: item, label: prettyLabel(item), provider: guessProvider(item), isDefault: item === defaultId });
     } else if (item && typeof item === 'object') {
       const id = item.id || item.name || item.model;
       if (!id) continue;
       out.push({
         id,
-        label: item.label || prettyLabel(id),
-        provider: item.provider || guessProvider(id),
-        isDefault: item.default || item.is_default || item.isDefault,
+        label: item.name || item.label || prettyLabel(id),     // backend: `name`
+        provider: item.type || item.provider || guessProvider(id), // backend: `type` (cloud/local)
+        isDefault: item.recommended || item.default || item.is_default || item.isDefault || id === defaultId,
       });
     }
   }
@@ -262,9 +266,9 @@ async function loadStatus(): Promise<void> {
 // Shared response handling (chat + voice)
 // ---------------------------------------------------------------------------
 function handleResponse(data: any, fromVoice: boolean): void {
-  // §6.3 — voice responses carry the STT transcript so ATI can tell
-  // "STT misheard" apart from "tool didn't match".
-  const transcript = data.transcript || data.heard || data.stt;
+  // §6.3 — voice responses carry the STT transcript (`user_text`) so ATI can
+  // tell "STT misheard" apart from "tool didn't match".
+  const transcript = data.user_text || data.transcript || data.heard || data.stt;
   if (fromVoice && transcript) {
     addBubble('user', transcript);
     history.push({ role: 'user', content: transcript });
@@ -310,7 +314,7 @@ async function sendText(): Promise<void> {
       body: JSON.stringify({
         message: text,
         history: history.slice(0, -1), // exclude the message we just pushed
-        mode: deepToggle.checked ? 'deep' : 'fast',
+        mode: deepToggle.checked ? 'deep' : 'local',
         model: selectedModel,
         speak: true,
       }),
@@ -377,6 +381,11 @@ async function sendVoice(blob: Blob): Promise<void> {
   const fd = new FormData();
   const ext = blob.type.includes('webm') ? 'webm' : blob.type.includes('ogg') ? 'ogg' : 'wav';
   fd.append(VOICE_FIELD, blob, `voice.${ext}`);
+  // /api/voice also takes mode/model/history so voice honours the model picker
+  // and deep toggle, same as /api/chat. history is JSON-stringified per contract.
+  fd.append('mode', deepToggle.checked ? 'deep' : 'local');
+  fd.append('model', selectedModel);
+  fd.append('history', JSON.stringify(history));
   try {
     const res = await fetch(API.voice, { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
