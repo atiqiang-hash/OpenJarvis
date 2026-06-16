@@ -130,3 +130,5 @@ learning.db
 minion_logs/
 *.oj-debug.json
 oj-debug.*.json
+
+Serenity-卡点仪表盘.zip
