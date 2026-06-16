@@ -175,6 +175,23 @@
     background:linear-gradient(90deg,rgba(255,84,112,.4),rgba(91,111,146,.35),rgba(0,229,143,.45))}
   .rng i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--txt);
     transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,.55)}
+  /* portfolio */
+  .psum{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .pcard2{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:16px 17px;position:relative;overflow:hidden}
+  .pcard2::after{content:"";position:absolute;inset:0;background:radial-gradient(120px 50px at 85% 0%,rgba(176,139,255,.10),transparent)}
+  .pcard2 .pl{color:var(--muted);font-size:12.5px}
+  .pcard2 .pv{font-family:var(--mono);font-size:25px;font-weight:700;letter-spacing:-.5px;margin-top:5px}
+  .pcard2 .pc{font-family:var(--mono);font-size:12.5px;margin-top:5px;font-weight:600}
+  .alloc{display:flex;height:15px;border-radius:8px;overflow:hidden;margin:2px 0 12px;border:1px solid var(--line);background:var(--panel2)}
+  .alloc span{height:100%;transition:width .4s}
+  .alloclegend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:16px;font-size:12px;color:var(--muted)}
+  .alloclegend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  .mkt{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;white-space:nowrap}
+  .mkt.US{background:rgba(91,140,255,.14);color:#5b8cff;border:1px solid rgba(91,140,255,.32)}
+  .mkt.TR{background:rgba(255,84,112,.13);color:#ff5470;border:1px solid rgba(255,84,112,.3)}
+  .srcbadge{font-size:10px;padding:2px 7px;border-radius:6px;font-family:var(--mono);font-weight:700}
+  .srcbadge.live{background:rgba(0,229,143,.14);color:var(--green)}
+  .srcbadge.snap{background:rgba(255,178,62,.13);color:var(--amber)}
 
   /* ---------- Principles ---------- */
   .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
@@ -233,6 +250,7 @@
       <div>卡点猎手 <small>SERENITY FRAMEWORK · AI 供应链卡点仪表盘</small></div>
     </div>
     <nav class="tabs">
+      <a href="#portfolio">我的持仓</a>
       <a href="#logic">底层逻辑</a>
       <a href="#flow">卡点供应链</a>
       <a href="#watch">标的看板</a>
@@ -274,6 +292,31 @@
 </div>
 
 <div class="wrap">
+
+<!-- MY PORTFOLIO -->
+<section id="portfolio">
+  <div class="shead">
+    <span class="num" style="color:var(--purple);border-color:var(--purple)">★ 持仓</span><h2>我的持仓 · My Portfolio</h2>
+    <p>来自你的券商（Midas）截图。美股为 Finnhub 实时，土耳其 BIST 股与汇率为截图快照。</p>
+  </div>
+  <div class="psum" id="psum"></div>
+  <div class="alloc" id="palloc"></div>
+  <div class="alloclegend" id="plegend"></div>
+  <div class="tablewrap">
+    <table id="ptable">
+      <thead><tr>
+        <th>标的</th><th>市场</th><th>持股</th><th>现价</th><th>日涨跌</th>
+        <th>持仓市值</th><th>≈ USD</th><th>占比</th><th>数据</th>
+      </tr></thead>
+      <tbody id="pbody"></tbody>
+    </table>
+  </div>
+  <p class="dim" style="font-size:12px;margin-top:11px;line-height:1.7">
+    💡 <b>更新持仓</b>：用文本编辑器打开本文件，搜索 <span class="mono">const PORTFOLIO</span>，按格式改持股数（<span class="mono">snapValue/snapPrice</span>）、价格、当日涨跌即可。
+    美股价随刷新自动更新；BIST 实时行情需 Finnhub 付费层，免费层下土耳其股显示截图价。
+    汇率 1₺ ≈ $<span id="fxnote">—</span>（由截图推算，可改 <span class="mono">FX_TRY_USD</span>）。
+  </p>
+</section>
 
 <!-- CORE LOGIC -->
 <section id="logic">
@@ -645,6 +688,62 @@ document.querySelectorAll("#wtable thead th[data-k]").forEach(th=>{
 });
 renderTable();
 
+/* ===== My Portfolio (from broker screenshot) ===== */
+let FX_TRY_USD=0.0216; // 1 TRY ≈ USD，由截图推算，可手动修改
+const PORTFOLIO=[
+  {mkt:"US",ticker:"QQQ",  name:"Invesco QQQ ETF",      cur:"$",snapPrice:744.15,snapValue:3287.69,snapDay:0.66, color:"#5b8cff"},
+  {mkt:"US",ticker:"VOO",  name:"Vanguard S&P 500 ETF", cur:"$",snapPrice:693.36,snapValue:3151.40,snapDay:-2.13,color:"#22d3ee"},
+  {mkt:"TR",ticker:"BIMAS",name:"BİM Mağazalar",        cur:"₺",snapPrice:394.75,snapValue:1184.25,snapDay:2.25, color:"#ff5470"},
+  {mkt:"TR",ticker:"ASELS",name:"Aselsan",              cur:"₺",snapPrice:384.25,snapValue:2305.50,snapDay:51.00,color:"#b08bff"},
+  {mkt:"TR",ticker:"ASTOR",name:"Astor Enerji",         cur:"₺",snapPrice:298.50,snapValue:2089.50,snapDay:80.50,color:"#ffb23e"}
+];
+const LIVE_SYMS=[...new Set([...WATCH.map(w=>w.ticker),...PORTFOLIO.filter(p=>p.mkt==="US").map(p=>p.ticker)])];
+const pShares=p=>p.snapValue/p.snapPrice;
+const pLive=p=>{const q=QUOTES[p.ticker];return (p.mkt==="US"&&q&&q.ok)?q:null;};
+const pPrice=p=>{const q=pLive(p);return q?q.c:p.snapPrice;};
+const pValNative=p=>pShares(p)*pPrice(p);
+const pValUSD=p=>p.mkt==="US"?pValNative(p):pValNative(p)*FX_TRY_USD;
+const pDayNative=p=>{const q=pLive(p);return q?pShares(p)*q.d:p.snapDay;};
+const pDayUSD=p=>p.mkt==="US"?pDayNative(p):pDayNative(p)*FX_TRY_USD;
+const pDp=p=>{const q=pLive(p);if(q)return q.dp;const v=pValNative(p),b=v-p.snapDay;return b?p.snapDay/b*100:0;};
+const fmt=n=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtSh=s=>Number.isInteger(s)?String(s):s.toFixed(3);
+function pChg(amt,curVal){const b=curVal-amt,pct=b?amt/b*100:0,u=amt>=0;
+  return `<div class="pc ${u?'up':'down'}">${u?'▲':'▼'} $${fmt(Math.abs(amt))} (${u?'+':'-'}${Math.abs(pct).toFixed(2)}%)</div>`;}
+function renderPortfolio(){
+  const totUSD=PORTFOLIO.reduce((s,p)=>s+pValUSD(p),0);
+  const totDay=PORTFOLIO.reduce((s,p)=>s+pDayUSD(p),0);
+  const us=PORTFOLIO.filter(p=>p.mkt==="US"), tr=PORTFOLIO.filter(p=>p.mkt==="TR");
+  const usVal=us.reduce((s,p)=>s+pValUSD(p),0), usDay=us.reduce((s,p)=>s+pDayUSD(p),0);
+  const trTRY=tr.reduce((s,p)=>s+pValNative(p),0), trDayTRY=tr.reduce((s,p)=>s+pDayNative(p),0), trUSD=trTRY*FX_TRY_USD;
+  const tb=trTRY-trDayTRY, tp=tb?trDayTRY/tb*100:0, tu=trDayTRY>=0;
+  $("#psum").innerHTML=`
+    <div class="pcard2"><div class="pl">总资产 · 约 USD</div><div class="pv">$${fmt(totUSD)}</div>${pChg(totDay,totUSD)}</div>
+    <div class="pcard2"><div class="pl">🇺🇸 美股 ABD</div><div class="pv">$${fmt(usVal)}</div>${pChg(usDay,usVal)}</div>
+    <div class="pcard2"><div class="pl">🇹🇷 土耳其股 BIST</div><div class="pv">₺${fmt(trTRY)}</div>
+      <div class="pc ${tu?'up':'down'}">${tu?'▲':'▼'} ₺${fmt(Math.abs(trDayTRY))} (${tu?'+':'-'}${Math.abs(tp).toFixed(2)}%) · ≈$${fmt(trUSD)}</div></div>
+    <div class="pcard2"><div class="pl">现金 Cash</div><div class="pv">$0.00</div><div class="pc dim">TL ₺0,00 · USD $0,00</div></div>`;
+  $("#palloc").innerHTML=PORTFOLIO.map(p=>`<span style="width:${(pValUSD(p)/totUSD*100).toFixed(2)}%;background:${p.color}" title="${p.ticker} ${(pValUSD(p)/totUSD*100).toFixed(1)}%"></span>`).join("");
+  $("#plegend").innerHTML=PORTFOLIO.map(p=>`<span><i style="background:${p.color}"></i>${p.ticker} ${(pValUSD(p)/totUSD*100).toFixed(1)}%</span>`).join("");
+  $("#pbody").innerHTML=PORTFOLIO.map(p=>{
+    const live=!!pLive(p), dp=pDp(p), u=dp>=0;
+    const badge=p.mkt==="TR"?`<span class="srcbadge snap">截图</span>`:(live?`<span class="srcbadge live">实时</span>`:`<span class="srcbadge snap">快照</span>`);
+    return `<tr>
+      <td><span class="tkr">${p.ticker}<small>${p.name}</small></span></td>
+      <td><span class="mkt ${p.mkt}">${p.mkt==="US"?"🇺🇸 ABD":"🇹🇷 BIST"}</span></td>
+      <td class="mono">${fmtSh(pShares(p))}</td>
+      <td class="mono">${p.cur}${fmt(pPrice(p))}</td>
+      <td><span class="mono ${u?'up':'down'}">${u?'▲':'▼'} ${Math.abs(dp).toFixed(2)}%</span></td>
+      <td class="mono">${p.cur}${fmt(pValNative(p))}</td>
+      <td class="mono">$${fmt(pValUSD(p))}</td>
+      <td class="mono">${(pValUSD(p)/totUSD*100).toFixed(1)}%</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join("");
+  const fx=$("#fxnote"); if(fx) fx.textContent=FX_TRY_USD;
+}
+renderPortfolio();
+
 /* ===== Finnhub live quotes ===== */
 const FINNHUB_DEFAULT="d7joat1r01qu1n4fg6ogd7joat1r01qu1n4fg6p0";
 const finnKey=()=>localStorage.getItem("finnhub_key")||FINNHUB_DEFAULT;
@@ -667,10 +766,10 @@ async function fetchQuote(sym){
 }
 async function refreshLive(){
   setLive("loading");
-  const res=await Promise.allSettled(WATCH.map(w=>fetchQuote(w.ticker)));
+  const res=await Promise.allSettled(LIVE_SYMS.map(s=>fetchQuote(s)));
   let ok=0,limited=false,sum=0,n=0;
   res.forEach((r,i)=>{
-    const t=WATCH[i].ticker;
+    const t=LIVE_SYMS[i];
     if(r.status==="fulfilled"&&r.value&&r.value.c>0){
       QUOTES[t]={...r.value,ok:true};ok++;
       if(typeof r.value.dp==="number"){sum+=r.value.dp;n++;}
@@ -680,12 +779,12 @@ async function refreshLive(){
     }
   });
   lastUpdate=new Date();
-  renderTable();
+  renderTable(); renderPortfolio();
   if(limited) setLive("limited");
   else if(ok===0) setLive("error");
   else{
     const avg=n?(sum/n):0, stamp=lastUpdate.toTimeString().slice(0,8);
-    setLive("ok",`✓ 已更新 ${ok}/${WATCH.length} · 组合日内均值 ${avg>=0?"+":""}${avg.toFixed(2)}% · ${stamp}`);
+    setLive("ok",`✓ 已更新 ${ok}/${LIVE_SYMS.length}（含持仓 QQQ/VOO）· 看板日内均值 ${avg>=0?"+":""}${avg.toFixed(2)}% · ${stamp}`);
   }
 }
 $("#refreshBtn").onclick=refreshLive;
