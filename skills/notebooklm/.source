@@ -1,0 +1,8 @@
+source = "github:notebooklm"
+repo_url = "https://github.com/teng-lin/notebooklm-py.git"
+commit = "8e4d8dd4dc840838f466c6c661cc9fe1aaa15dbb"
+category = ""
+installed_at = "2026-06-16T10:40:00Z"
+translated_tools = []
+missing_tools = []
+scripts_imported = false
