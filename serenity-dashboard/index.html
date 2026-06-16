@@ -136,7 +136,7 @@
   .filters button:hover{border-color:var(--line2);color:var(--txt)}
   .filters button.on{background:var(--grad);color:#04121a;border-color:transparent}
   .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px}
-  table{width:100%;border-collapse:collapse;min-width:880px}
+  table{width:100%;border-collapse:collapse;min-width:1000px}
   thead th{text-align:left;font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;
     padding:14px 14px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;font-weight:700}
   thead th:hover{color:var(--muted)}
@@ -157,6 +157,26 @@
   .upside{font-family:var(--mono);font-weight:700}
   td.spark{width:90px}
   svg.spk{display:block}
+  /* live quote bar */
+  .livebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:11px 15px;margin-bottom:14px;font-size:13px}
+  .livedot{width:9px;height:9px;border-radius:50%;background:#5b6f92;flex:none;transition:.3s}
+  #livestat{font-weight:600;color:var(--txt)}
+  .livesrc{color:var(--dim);font-size:11.5px}
+  .livebtns{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .livebar button{background:var(--panel2);border:1px solid var(--line2);color:var(--txt);
+    padding:7px 13px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s}
+  .livebar button:hover{border-color:var(--cyan);color:var(--cyan)}
+  #refreshBtn{background:var(--grad);color:#04121a;border-color:transparent}
+  #refreshBtn:hover{color:#04121a;opacity:.9}
+  .autolbl{color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer}
+  .dim{color:var(--dim)}
+  .livep{font-weight:700}
+  .rngcell{min-width:90px}
+  .rng{position:relative;height:6px;border-radius:6px;margin:7px 0;
+    background:linear-gradient(90deg,rgba(255,84,112,.4),rgba(91,111,146,.35),rgba(0,229,143,.45))}
+  .rng i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--txt);
+    transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,.55)}
 
   /* ---------- Principles ---------- */
   .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
@@ -307,7 +327,17 @@
 <section id="watch">
   <div class="shead">
     <span class="num">03</span><h2>标的看板</h2>
-    <p>按卡点层筛选、点表头排序。走势为示意图，价格/目标价取自其公开发帖，仅供研究。</p>
+    <p>现价 / 日涨跌为 Finnhub 实时报价，点「刷新行情」更新；参考价 / 目标价取自其公开发帖。可按卡点层筛选、点表头排序。</p>
+  </div>
+  <div class="livebar">
+    <span class="livedot" id="livedot"></span>
+    <span id="livestat">就绪 · 点击「刷新行情」拉取实时报价</span>
+    <span class="livesrc">实时数据源：Finnhub（免费层 60 calls/min · 美股）</span>
+    <div class="livebtns">
+      <button id="refreshBtn">↻ 刷新行情</button>
+      <label class="autolbl"><input type="checkbox" id="autoChk"/> 自动 60s</label>
+      <button id="keyBtn">🔑 API Key</button>
+    </div>
   </div>
   <div class="filters" id="filters"></div>
   <div class="tablewrap">
@@ -315,13 +345,14 @@
       <thead>
         <tr>
           <th data-k="ticker">标的 <span class="ar">▲▼</span></th>
-          <th data-k="tier">信念档 <span class="ar">▲▼</span></th>
+          <th data-k="tier">档 <span class="ar">▲▼</span></th>
           <th data-k="layerName">卡点层 <span class="ar">▲▼</span></th>
+          <th data-k="price">现价·实时 <span class="ar">▲▼</span></th>
+          <th data-k="dp">日涨跌 <span class="ar">▲▼</span></th>
+          <th>日内区间</th>
+          <th>参考 → 目标</th>
+          <th data-k="toTarget">距目标·实时 <span class="ar">▲▼</span></th>
           <th data-k="thesis">核心论点（卡点）</th>
-          <th data-k="entry">参考价 <span class="ar">▲▼</span></th>
-          <th data-k="pt">目标价 <span class="ar">▲▼</span></th>
-          <th data-k="upside">隐含空间 <span class="ar">▲▼</span></th>
-          <th>示意走势</th>
         </tr>
       </thead>
       <tbody id="wbody"></tbody>
@@ -370,7 +401,8 @@
     也不构成投资、财务或交易建议。<br/>
     2）其自报收益（+3,600%/+4,502% 等）<b>未经审计、含杠杆、波动极大，且存在严重的幸存者/选择偏差</b>；
     他不管理基金、不披露 13F，所点名标的多为<b>高波动微/小市值</b>，可单日暴涨亦可腰斩（如 $BKKT 曾从 $40 跌至 $8）。<br/>
-    3）表中价格、目标价与走势为示意/取自其历史发帖，<b>非实时行情</b>，可能已严重过时；任何决策请以你自己的尽调与实时数据为准。<br/>
+    3）<b>现价 / 日涨跌为 Finnhub 实时报价</b>（免费层，可能限流或个别美股代码无数据，届时显示「—」）；参考价 / 目标价仍取自其历史发帖、可能已过时。
+    API Key 内置于本文件、对任何打开者可见，如介意请点「🔑 API Key」替换或自行轮换。任何决策请以你自己的尽调与实时数据为准。<br/>
     4）粉丝放大效应可能造成短期情绪冲高，存在<b>在高位接盘</b>的风险。投资有风险，入市需谨慎。
     </p>
   </div>
@@ -529,18 +561,6 @@ const $ = s=>document.querySelector(s);
 function tick(){const d=new Date();$("#clock").textContent=d.toTimeString().slice(0,8)+" 本地";}
 setInterval(tick,1000);tick();
 
-/* deterministic illustrative sparkline */
-function spark(seed,up){
-  let x=seed*9301+49297, n=22, pts=[], v=50;
-  for(let i=0;i<n;i++){x=(x*9301+49297)%233280; const r=x/233280-0.5;
-    v+= r*9 + (up?1.7:-.2); v=Math.max(8,Math.min(92,v)); pts.push(v);}
-  const w=84,h=26,max=Math.max(...pts),min=Math.min(...pts),rng=(max-min)||1;
-  const path=pts.map((p,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-(p-min)/rng*h).toFixed(1)}`).join(" ");
-  const col=pts[n-1]>=pts[0]?"#00e58f":"#ff5470";
-  return `<svg class="spk" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    <polyline fill="none" stroke="${col}" stroke-width="1.6" points="${path}"/></svg>`;
-}
-
 /* Layers */
 const layersEl=$("#layers");
 LAYERS.forEach((l,i)=>{
@@ -583,31 +603,42 @@ function setFilter(id,btn){curFilter=id;
   btn.classList.add("on");renderTable();}
 
 /* Table */
+const QUOTES={};
 let sortK="tier",sortDir=1;
 const tierRank={S:0,A:1,B:2,C:3};
-function upside(w){return (w.entry&&w.pt)?((w.pt/w.entry-1)*100):null;}
+function liveUpside(w){const q=QUOTES[w.ticker];return (w.pt&&q&&q.ok&&q.c>0)?((w.pt/q.c-1)*100):null;}
 function renderTable(){
-  let rows=WATCH.map(w=>({...w,layerName:lmap[w.layer].zh,layerColor:lmap[w.layer].color,upside:upside(w)}));
+  let rows=WATCH.map(w=>({...w,layerName:lmap[w.layer].zh,layerColor:lmap[w.layer].color}));
   if(curFilter!=="all") rows=rows.filter(r=>r.layer===curFilter);
   rows.sort((a,b)=>{
     let va,vb;
     if(sortK==="tier"){va=tierRank[a.tier];vb=tierRank[b.tier];}
-    else if(sortK==="upside"){va=a.upside??-1;vb=b.upside??-1;}
-    else if(sortK==="entry"||sortK==="pt"){va=a[sortK]??-1;vb=b[sortK]??-1;}
+    else if(sortK==="price"){va=QUOTES[a.ticker]&&QUOTES[a.ticker].ok?QUOTES[a.ticker].c:-1;vb=QUOTES[b.ticker]&&QUOTES[b.ticker].ok?QUOTES[b.ticker].c:-1;}
+    else if(sortK==="dp"){va=QUOTES[a.ticker]&&QUOTES[a.ticker].ok?QUOTES[a.ticker].dp:-9999;vb=QUOTES[b.ticker]&&QUOTES[b.ticker].ok?QUOTES[b.ticker].dp:-9999;}
+    else if(sortK==="toTarget"){va=liveUpside(a)??-99999;vb=liveUpside(b)??-99999;}
     else {va=(a[sortK]||"").toString();vb=(b[sortK]||"").toString();return sortDir*va.localeCompare(vb);}
     return sortDir*(va-vb);
   });
-  $("#wbody").innerHTML=rows.map((w,i)=>{
-    const up=w.upside!=null?`<span class="upside up">+${w.upside.toFixed(0)}%</span>`:`<span style="color:var(--dim)">论点期</span>`;
+  $("#wbody").innerHTML=rows.map(w=>{
+    const q=QUOTES[w.ticker], live=q&&q.ok;
+    const price=live?`<span class="mono livep">$${q.c.toFixed(2)}</span>`:`<span class="dim">—</span>`;
+    const dp=live?`<span class="mono ${q.dp>=0?'up':'down'}">${q.dp>=0?'▲':'▼'} ${Math.abs(q.dp).toFixed(2)}%</span>`:`<span class="dim">—</span>`;
+    let rng=`<span class="dim">—</span>`;
+    if(live&&q.h>q.l){const pos=Math.max(0,Math.min(100,(q.c-q.l)/(q.h-q.l)*100));
+      rng=`<div class="rng" title="日内 低 $${q.l.toFixed(2)} → 高 $${q.h.toFixed(2)}"><i style="left:${pos.toFixed(0)}%"></i></div>`;}
+    const refpt=`<span class="mono">${w.entry?("$"+w.entry):"—"}</span> <span class="dim">→</span> <span class="mono">${w.pt?("$"+w.pt):"—"}</span>`;
+    const lu=liveUpside(w);
+    const luCell=lu!=null?`<span class="upside ${lu>=0?'up':'down'}">${lu>=0?'+':''}${lu.toFixed(0)}%</span>`:`<span class="dim">论点期</span>`;
     return `<tr>
       <td><span class="tkr">$${w.ticker}<small>${w.name} · ${w.horizon}</small></span></td>
       <td><span class="tier ${w.tier}">${w.tier}</span></td>
       <td><span class="lpill" style="background:${w.layerColor}1f;color:${w.layerColor};border:1px solid ${w.layerColor}40">${w.layerName}</span></td>
+      <td>${price}</td>
+      <td>${dp}</td>
+      <td class="rngcell">${rng}</td>
+      <td>${refpt}</td>
+      <td>${luCell}</td>
       <td><div class="thesis">${w.thesis}</div></td>
-      <td class="mono">${w.entry?("$"+w.entry):"—"}</td>
-      <td class="mono">${w.pt?("$"+w.pt):"—"}</td>
-      <td>${up}</td>
-      <td class="spark">${spark(i+w.ticker.length, w.tier!=="C")}</td>
     </tr>`;
   }).join("");
 }
@@ -615,6 +646,64 @@ document.querySelectorAll("#wtable thead th[data-k]").forEach(th=>{
   th.onclick=()=>{const k=th.dataset.k;if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=1;}renderTable();};
 });
 renderTable();
+
+/* ===== Finnhub live quotes ===== */
+const FINNHUB_DEFAULT="d7joat1r01qu1n4fg6ogd7joat1r01qu1n4fg6p0";
+const finnKey=()=>localStorage.getItem("finnhub_key")||FINNHUB_DEFAULT;
+let liveTimer=null,lastUpdate=null;
+function setLive(state,msg){
+  const dot=$("#livedot"),st=$("#livestat");
+  const map={idle:["#5b6f92","就绪 · 点击「刷新行情」拉取实时报价"],
+    loading:["#ffb23e","正在拉取 Finnhub 实时报价…"],
+    ok:["#00e58f",msg],
+    limited:["#ffb23e","Finnhub 限流（60 calls/min），请稍后再刷新"],
+    error:["#ff5470","行情拉取失败 — 检查网络 / API Key / 跨域"]};
+  const e=map[state]||map.idle;
+  dot.style.background=e[0];dot.style.boxShadow=`0 0 10px ${e[0]}`;st.textContent=e[1];
+}
+async function fetchQuote(sym){
+  const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${finnKey()}`);
+  if(r.status===429){const e=new Error("rate");e.rate=1;throw e;}
+  if(!r.ok) throw new Error("http "+r.status);
+  return r.json();
+}
+async function refreshLive(){
+  setLive("loading");
+  const res=await Promise.allSettled(WATCH.map(w=>fetchQuote(w.ticker)));
+  let ok=0,limited=false,sum=0,n=0;
+  res.forEach((r,i)=>{
+    const t=WATCH[i].ticker;
+    if(r.status==="fulfilled"&&r.value&&r.value.c>0){
+      QUOTES[t]={...r.value,ok:true};ok++;
+      if(typeof r.value.dp==="number"){sum+=r.value.dp;n++;}
+    }else{
+      QUOTES[t]={ok:false};
+      if(r.status==="rejected"&&r.reason&&r.reason.rate) limited=true;
+    }
+  });
+  lastUpdate=new Date();
+  renderTable();
+  if(limited) setLive("limited");
+  else if(ok===0) setLive("error");
+  else{
+    const avg=n?(sum/n):0, stamp=lastUpdate.toTimeString().slice(0,8);
+    setLive("ok",`✓ 已更新 ${ok}/${WATCH.length} · 组合日内均值 ${avg>=0?"+":""}${avg.toFixed(2)}% · ${stamp}`);
+  }
+}
+$("#refreshBtn").onclick=refreshLive;
+$("#autoChk").onchange=e=>{
+  if(e.target.checked){liveTimer=setInterval(refreshLive,60000);refreshLive();}
+  else{clearInterval(liveTimer);liveTimer=null;}
+};
+$("#keyBtn").onclick=()=>{
+  const k=prompt("输入你的 Finnhub API Key（留空恢复默认，保存在本机浏览器 localStorage）：",finnKey());
+  if(k===null) return;
+  if(k.trim()==="") localStorage.removeItem("finnhub_key");
+  else localStorage.setItem("finnhub_key",k.trim());
+  refreshLive();
+};
+setLive("idle");
+refreshLive();
 
 /* Principles */
 $("#pgrid").innerHTML=PRINCIPLES.map((p,i)=>`<div class="pcard">
