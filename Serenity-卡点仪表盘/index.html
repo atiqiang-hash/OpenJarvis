@@ -192,6 +192,49 @@
   .srcbadge{font-size:10px;padding:2px 7px;border-radius:6px;font-family:var(--mono);font-weight:700}
   .srcbadge.live{background:rgba(0,229,143,.14);color:var(--green)}
   .srcbadge.snap{background:rgba(255,178,62,.13);color:var(--amber)}
+  /* money tools */
+  .num.tool{color:var(--amber);border-color:rgba(255,178,62,.4)}
+  .atool-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .atool-top label,.rcalc-in label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px;font-weight:600}
+  input[type=number],input[type=text],input[type=date],select{
+    background:var(--bg2);border:1px solid var(--line2);color:var(--txt);border-radius:9px;
+    padding:9px 11px;font-size:13.5px;font-family:var(--mono);outline:none;transition:.15s;max-width:170px}
+  input:focus,select:focus{border-color:var(--cyan)}
+  .presets{display:flex;gap:7px;flex-wrap:wrap}
+  .presets button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:.15s}
+  .presets button:hover{border-color:var(--line2);color:var(--txt)}
+  .presets button.on{background:var(--grad);color:#04121a;border-color:transparent}
+  .allocbar2{display:flex;height:16px;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;background:var(--panel2)}
+  .allocbar2 span{height:100%;transition:width .35s}
+  .buckets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .bk{background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:14px 15px}
+  .bkh{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700}
+  .bkv{font-family:var(--mono);font-size:23px;font-weight:700;margin:7px 0 3px}
+  .bke{font-size:12px;color:var(--cyan)}
+  .bkn{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.5}
+  .rulesbox{margin-top:14px;border:1px dashed var(--line2);border-radius:11px;padding:13px 15px;font-size:12.8px;color:var(--muted);line-height:1.7}
+  .rcalc{padding:20px}
+  .rcalc-in{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .rcgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .rc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .rcl{font-size:12px;color:var(--muted)}
+  .rcv{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:5px;letter-spacing:-.5px}
+  .rcs{font-size:11px;color:var(--dim);margin-top:5px}
+  .rcnote{margin-top:13px;font-size:12.8px;line-height:1.6;padding:11px 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--line)}
+  .jstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .js{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:13px;padding:15px 16px}
+  .jl{font-size:12px;color:var(--muted)}
+  .jv{font-family:var(--mono);font-size:23px;font-weight:700;margin-top:5px}
+  .js2{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.4}
+  .jform{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .jform input,.jform select{font-family:var(--sans)}
+  #jAdd{background:var(--grad);color:#04121a;border:none;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:13px}
+  .jbtns{display:flex;gap:9px;margin-top:12px}
+  .jbtns button{background:var(--panel);border:1px solid var(--line2);color:var(--muted);padding:8px 14px;border-radius:9px;cursor:pointer;font-size:12.5px;font-family:var(--sans);transition:.15s}
+  .jbtns button:hover{color:var(--txt);border-color:var(--cyan)}
+  .jdel{background:transparent;border:1px solid var(--line2);color:var(--red);border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:12px}
+  .jnote{color:var(--muted);font-size:12px;max-width:190px}
+  @media(max-width:880px){.buckets,.rcgrid,.jstats,.psum{grid-template-columns:1fr 1fr}}
 
   /* ---------- Principles ---------- */
   .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
@@ -251,6 +294,9 @@
     </div>
     <nav class="tabs">
       <a href="#portfolio">我的持仓</a>
+      <a href="#alloc-tool">资产配置</a>
+      <a href="#risk-tool">风险计算</a>
+      <a href="#journal-tool">交易日志</a>
       <a href="#logic">底层逻辑</a>
       <a href="#flow">卡点供应链</a>
       <a href="#watch">标的看板</a>
@@ -316,6 +362,73 @@
     美股价随刷新自动更新；BIST 实时行情需 Finnhub 付费层，免费层下土耳其股显示截图价。
     汇率 1₺ ≈ $<span id="fxnote">—</span>（由截图推算，可改 <span class="mono">FX_TRY_USD</span>）。
   </p>
+</section>
+
+<!-- ALLOCATION TOOL -->
+<section id="alloc-tool">
+  <div class="shead">
+    <span class="num tool">💰 工具1</span><h2>资产配置蓝图 · $3,000 怎么分</h2>
+    <p>先保本 = 核心打底、卫星加速、投机封顶。这是框架，不是个股建议。</p>
+  </div>
+  <div class="panel" style="padding:20px">
+    <div class="atool-top">
+      <label>账户规模 $<input id="capIn" type="number" value="3000" step="100"></label>
+      <div class="presets">
+        <button data-c="75" data-s="20" data-k="5">保守 75/20/5</button>
+        <button class="on" data-c="70" data-s="20" data-k="10">稳健 70/20/10</button>
+        <button data-c="50" data-s="30" data-k="20">进取 50/30/20</button>
+      </div>
+    </div>
+    <div class="allocbar2" id="allocbar2"></div>
+    <div class="buckets" id="buckets"></div>
+    <div class="rulesbox" id="allocrules"></div>
+  </div>
+</section>
+
+<!-- RISK CALCULATOR -->
+<section id="risk-tool">
+  <div class="shead">
+    <span class="num tool">💰 工具2</span><h2>仓位与风险计算器</h2>
+    <p>买之前先算：这一笔最多亏多少、该买几股、占账户多少。（默认做多）</p>
+  </div>
+  <div class="panel rcalc">
+    <div class="rcalc-in">
+      <label>账户规模 $<input id="rcAcct" type="number" value="3000" step="100"></label>
+      <label>单笔风险 %<input id="rcRisk" type="number" value="1" step="0.5"></label>
+      <label>入场价 $<input id="rcEntry" type="number" placeholder="如 5.00" step="0.01"></label>
+      <label>止损价 $<input id="rcStop" type="number" placeholder="如 4.50" step="0.01"></label>
+      <label>目标价 $<input id="rcTarget" type="number" placeholder="可选" step="0.01"></label>
+    </div>
+    <div id="rcalcOut"></div>
+  </div>
+</section>
+
+<!-- TRADE JOURNAL -->
+<section id="journal-tool">
+  <div class="shead">
+    <span class="num tool">💰 工具3</span><h2>交易日志与绩效</h2>
+    <p>记录每一笔，自动算胜率、盈亏比、期望值与累计收益。数据存你本机浏览器。</p>
+  </div>
+  <div class="jstats" id="jstats"></div>
+  <div class="panel" style="padding:16px 18px">
+    <div class="jform">
+      <input id="jTicker" type="text" placeholder="标的 如 AXTI">
+      <select id="jDir"><option value="long">多</option><option value="short">空</option></select>
+      <input id="jShares" type="number" placeholder="股数">
+      <input id="jEntry" type="number" placeholder="入场价" step="0.01">
+      <input id="jExit" type="number" placeholder="出场价(空=持仓)" step="0.01">
+      <input id="jDate" type="date">
+      <input id="jNote" type="text" placeholder="备注">
+      <button id="jAdd">+ 添加</button>
+    </div>
+  </div>
+  <div class="tablewrap" style="margin-top:14px">
+    <table id="jtable">
+      <thead><tr><th>日期</th><th>标的</th><th>方向</th><th>股数</th><th>入场</th><th>出场</th><th>盈亏 $</th><th>盈亏 %</th><th>备注</th><th></th></tr></thead>
+      <tbody id="jbody"></tbody>
+    </table>
+  </div>
+  <div class="jbtns"><button id="jDemo">载入示例</button><button id="jClear">清空日志</button></div>
 </section>
 
 <!-- CORE LOGIC -->
@@ -837,6 +950,123 @@ function updateScore(){
   fill.style.background=pct<0.45?"var(--red)":pct<0.7?"var(--amber)":pct<0.86?"var(--cyan)":"linear-gradient(90deg,#22d3ee,#b08bff)";
   v.style.color=col;v.style.background=bg;v.textContent=label;note.textContent=msg+" 本评分为框架自查工具，不构成投资建议。";
 }
+
+/* ===================== 搞钱工具箱 Money Cockpit ===================== */
+const money = n => "$"+ (isFinite(n)? Math.round(n).toLocaleString("en-US") : "0");
+const money2 = n => "$"+ (isFinite(n)? fmt(n) : "0.00");
+
+/* ---- 工具1：资产配置蓝图 ---- */
+function renderAlloc(){
+  const cap=Math.max(0,+$("#capIn").value||0);
+  const on=document.querySelector("#alloc-tool .presets button.on")||document.querySelector("#alloc-tool .presets button");
+  const c=+on.dataset.c, s=+on.dataset.s, k=+on.dataset.k;
+  const bks=[
+    {key:"核心稳健 Core", pct:c, color:"#22d3ee", ex:"宽基 ETF：VOO / QQQ", note:"长期持有打底，波动低，账户的压舱石"},
+    {key:"卫星成长 Satellite", pct:s, color:"#00e58f", ex:"质优成长 / Serenity A 档", note:"加速器，单只 ≤ 账户 8%，分散 3–6 只"},
+    {key:"投机高波动 Speculative", pct:k, color:"#ff5470", ex:"卡点小盘 / BIST / 加密", note:"彩票仓，单只 ≤ 账户 5%，亏光也不伤元气"}
+  ];
+  $("#allocbar2").innerHTML=bks.map(b=>`<span style="width:${b.pct}%;background:${b.color}" title="${b.key} ${b.pct}%"></span>`).join("");
+  $("#buckets").innerHTML=bks.map(b=>`<div class="bk" style="border-top:3px solid ${b.color}">
+    <div class="bkh"><span>${b.key}</span><b style="color:${b.color}">${b.pct}%</b></div>
+    <div class="bkv">${money(cap*b.pct/100)}</div><div class="bke">${b.ex}</div><div class="bkn">${b.note}</div></div>`).join("");
+  $("#allocrules").innerHTML=`📐 <b>关键纪律</b>：单只投机仓 ≤ <b style="color:var(--red)">${money(cap*0.05)}</b>（账户 5%）·
+    投机总仓 ≤ <b style="color:var(--red)">${money(cap*k/100)}</b> ·
+    任何一笔的<b>最大亏损</b>都用下方「风险计算器」压在账户 1% ≈ <b style="color:var(--amber)">${money(cap*0.01)}</b> 以内。`;
+}
+const capEl=$("#capIn"); if(capEl) capEl.addEventListener("input",renderAlloc);
+document.querySelectorAll("#alloc-tool .presets button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#alloc-tool .presets button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");renderAlloc();
+});
+renderAlloc();
+
+/* ---- 工具2：仓位与风险计算器 ---- */
+function calcRisk(){
+  const acct=+$("#rcAcct").value||0, risk=+$("#rcRisk").value||0;
+  const entry=+$("#rcEntry").value||0, stop=+$("#rcStop").value||0, target=+$("#rcTarget").value||0;
+  const out=$("#rcalcOut"), maxLoss=acct*risk/100;
+  if(!entry||!stop){ out.innerHTML=`<div class="rcnote dim">填入<b>入场价</b>和<b>止损价</b>即可计算。单笔最大可亏 = <b class="warn">${money2(maxLoss)}</b>（账户 ${risk}%）。</div>`; return; }
+  const perShare=entry-stop;
+  if(perShare<=0){ out.innerHTML=`<div class="rcnote down">⚠️ 做多时止损价必须<b>低于</b>入场价。现在止损 ≥ 入场，无法计算。</div>`; return; }
+  let shares=Math.floor(maxLoss/perShare), warn="";
+  if(shares<1){ out.innerHTML=`<div class="rcnote down">⚠️ 按 ${money2(maxLoss)} 的风险预算，这个止损距离（每股亏 ${money2(perShare)}）连 1 股都买不了。把止损放近一点，或换更低价的标的。</div>`; return; }
+  let posVal=shares*entry;
+  if(posVal>acct){ shares=Math.floor(acct/entry); posVal=shares*entry;
+    warn=`<div class="rcnote warn">注：风险预算允许更多，但账户资金只够买 <b>${shares}</b> 股，已按可用资金封顶。</div>`; }
+  const realLoss=shares*perShare, posPct=acct?posVal/acct*100:0;
+  const rr=target>entry?(target-entry)/perShare:null;
+  const r1=entry+perShare, r2=entry+2*perShare, r3=entry+3*perShare;
+  out.innerHTML=`<div class="rcgrid">
+    <div class="rc"><div class="rcl">单笔最大风险</div><div class="rcv down">${money2(maxLoss)}</div><div class="rcs">账户 ${risk}%</div></div>
+    <div class="rc"><div class="rcl">建议买入</div><div class="rcv up">${shares} 股</div><div class="rcs">每股风险 ${money2(perShare)}</div></div>
+    <div class="rc"><div class="rcl">仓位价值</div><div class="rcv">${money2(posVal)}</div><div class="rcs">占账户 ${posPct.toFixed(1)}%</div></div>
+    <div class="rc"><div class="rcl">触发止损实亏</div><div class="rcv down">${money2(realLoss)}</div><div class="rcs">已控制在预算内</div></div>
+    <div class="rc"><div class="rcl">盈亏比 R:R</div><div class="rcv ${rr?(rr>=2?'up':'warn'):'dim'}">${rr?rr.toFixed(2)+" : 1":"—"}</div><div class="rcs">${rr?(rr>=2?"达标 ≥ 2":"偏低 < 2"):"填目标价算"}</div></div>
+    <div class="rc"><div class="rcl">分批止盈 1R/2R/3R</div><div class="rcv" style="font-size:14px">$${fmt(r1)} / $${fmt(r2)} / $${fmt(r3)}</div><div class="rcs">盈利达 1R 可移止损保本</div></div>
+  </div>${warn}<div class="rcnote dim">🧭 铁律：盈亏比 < 2:1 的交易尽量别做；止损一旦设好，<b>只能上移、不能下挪</b>。</div>`;
+}
+["rcAcct","rcRisk","rcEntry","rcStop","rcTarget"].forEach(id=>{const el=$("#"+id); if(el) el.addEventListener("input",calcRisk);});
+calcRisk();
+
+/* ---- 工具3：交易日志与绩效 ---- */
+const JKEY="tj_trades_v1";
+const jload=()=>{try{return JSON.parse(localStorage.getItem(JKEY))||[]}catch(e){return[]}};
+const jsave=a=>localStorage.setItem(JKEY,JSON.stringify(a));
+const jpnl=t=>(t.exit==null||t.exit==="")?null:(t.exit-t.entry)*t.shares*(t.dir==="short"?-1:1);
+const jpct=t=>(t.exit==null||t.exit==="")?null:(t.exit/t.entry-1)*100*(t.dir==="short"?-1:1);
+function renderJournal(){
+  const arr=jload(), closed=arr.filter(t=>jpnl(t)!=null);
+  const wins=closed.filter(t=>jpnl(t)>0), losses=closed.filter(t=>jpnl(t)<0);
+  const totPnl=closed.reduce((s,t)=>s+jpnl(t),0);
+  const winRate=closed.length?wins.length/closed.length*100:0;
+  const avgWin=wins.length?wins.reduce((s,t)=>s+jpnl(t),0)/wins.length:0;
+  const avgLoss=losses.length?losses.reduce((s,t)=>s+jpnl(t),0)/losses.length:0;
+  const expc=closed.length?totPnl/closed.length:0;
+  const acct=+($("#rcAcct")?$("#rcAcct").value:3000)||3000;
+  const retPct=acct?totPnl/acct*100:0, payoff=avgLoss!==0?Math.abs(avgWin/avgLoss):0;
+  $("#jstats").innerHTML=`
+    <div class="js"><div class="jl">累计已实现盈亏</div><div class="jv ${totPnl>=0?'up':'down'}">${totPnl>=0?'+':''}${money2(totPnl)}</div><div class="js2">≈ 账户 ${retPct>=0?'+':''}${retPct.toFixed(1)}%</div></div>
+    <div class="js"><div class="jl">胜率</div><div class="jv">${winRate.toFixed(0)}%</div><div class="js2">${wins.length} 胜 / ${losses.length} 负 · 共 ${closed.length} 笔平仓</div></div>
+    <div class="js"><div class="jl">盈亏比（均盈/均亏）</div><div class="jv ${payoff>=2?'up':(payoff?'warn':'dim')}">${payoff?payoff.toFixed(2):'—'}</div><div class="js2">均盈 ${money2(avgWin)} · 均亏 ${money2(avgLoss)}</div></div>
+    <div class="js"><div class="jl">每笔期望值</div><div class="jv ${expc>=0?'up':'down'}">${expc>=0?'+':''}${money2(expc)}</div><div class="js2">＞0 才是长期赚钱的系统</div></div>`;
+  $("#jbody").innerHTML=arr.length?arr.map(t=>{
+    const p=jpnl(t), pp=jpct(t), open=p==null;
+    return `<tr>
+      <td class="mono" style="font-size:12px">${t.date||""}</td>
+      <td><span class="tkr">${t.ticker}</span></td>
+      <td>${t.dir==="short"?'<span class="down">空</span>':'<span class="up">多</span>'}</td>
+      <td class="mono">${t.shares}</td>
+      <td class="mono">$${fmt(+t.entry)}</td>
+      <td class="mono">${open?'<span class="dim">持仓中</span>':'$'+fmt(+t.exit)}</td>
+      <td class="mono ${open?'dim':(p>=0?'up':'down')}">${open?'—':((p>=0?'+':'')+money2(p))}</td>
+      <td class="mono ${open?'dim':(pp>=0?'up':'down')}">${open?'—':((pp>=0?'+':'')+pp.toFixed(1)+'%')}</td>
+      <td class="jnote">${t.note||''}</td>
+      <td><button class="jdel" data-id="${t.id}">✕</button></td></tr>`;
+  }).join(""):`<tr><td colspan="10" class="dim" style="text-align:center;padding:26px">还没有交易记录。用上方表单添加，或点「载入示例」看效果。</td></tr>`;
+  document.querySelectorAll(".jdel").forEach(b=>b.onclick=()=>{jsave(jload().filter(t=>String(t.id)!==String(b.dataset.id)));renderJournal();});
+}
+const jAddBtn=$("#jAdd");
+if(jAddBtn) jAddBtn.onclick=()=>{
+  const t={id:Date.now(),ticker:($("#jTicker").value||"").trim().toUpperCase(),dir:$("#jDir").value,
+    shares:+$("#jShares").value||0,entry:+$("#jEntry").value||0,
+    exit:$("#jExit").value===""?null:(+$("#jExit").value),
+    date:$("#jDate").value||new Date().toISOString().slice(0,10),note:($("#jNote").value||"").trim()};
+  if(!t.ticker||!t.shares||!t.entry){alert("请至少填写：标的、股数、入场价。");return;}
+  const a=jload();a.unshift(t);jsave(a);
+  ["jTicker","jShares","jEntry","jExit","jNote"].forEach(id=>$("#"+id).value="");
+  renderJournal();
+};
+const jClearBtn=$("#jClear");
+if(jClearBtn) jClearBtn.onclick=()=>{if(confirm("确定清空全部交易记录？不可恢复。")){localStorage.removeItem(JKEY);renderJournal();}};
+const jDemoBtn=$("#jDemo");
+if(jDemoBtn) jDemoBtn.onclick=()=>{jsave([
+  {id:1,ticker:"VOO",dir:"long",shares:3,entry:680,exit:693.36,date:"2026-05-02",note:"核心仓 ETF 定投"},
+  {id:2,ticker:"AXTI",dir:"long",shares:20,entry:4.10,exit:5.30,date:"2026-05-15",note:"卡点小盘 半仓止盈"},
+  {id:3,ticker:"NBIS",dir:"long",shares:5,entry:88,exit:null,date:"2026-06-01",note:"持仓中, 止损 78"},
+  {id:4,ticker:"AAOI",dir:"long",shares:15,entry:30,exit:27.20,date:"2026-06-08",note:"破位止损 认错离场"}
+]);renderJournal();};
+const jDateEl=$("#jDate"); if(jDateEl) jDateEl.value=new Date().toISOString().slice(0,10);
+renderJournal();
 
 /* year */
 $("#year").textContent=new Date().getFullYear();
