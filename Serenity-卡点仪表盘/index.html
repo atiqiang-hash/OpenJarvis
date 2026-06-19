@@ -355,7 +355,7 @@
     <table id="ptable">
       <thead><tr>
         <th>标的</th><th>市场</th><th>持股</th><th>现价</th><th>日涨跌</th>
-        <th>持仓市值</th><th>≈ USD</th><th>占比</th><th>数据</th>
+        <th>持仓市值</th><th>≈ USD</th><th>占比</th><th>止损价</th><th>风险敞口</th><th>数据</th>
       </tr></thead>
       <tbody id="pbody"></tbody>
     </table>
@@ -879,6 +879,14 @@ const pValUSD=p=>p.mkt==="US"?pValNative(p):pValNative(p)*FX_TRY_USD;
 const pDayNative=p=>{const q=pLive(p);return q?pShares(p)*q.d:p.snapDay;};
 const pDayUSD=p=>p.mkt==="US"?pDayNative(p):pDayNative(p)*FX_TRY_USD;
 const pDp=p=>{const q=pLive(p);if(q)return q.dp;const v=pValNative(p),b=v-p.snapDay;return b?p.snapDay/b*100:0;};
+/* —— 止损价（存 localStorage，可在持仓表内联编辑）—— */
+const PSKEY="pstops_v1";
+const psLoad=()=>{try{return JSON.parse(localStorage.getItem(PSKEY))||{}}catch(e){return{}}};
+const psSave=o=>localStorage.setItem(PSKEY,JSON.stringify(o));
+const pStop=p=>{const v=psLoad()[p.ticker];return (v==null||v==="")?null:+v;};
+function pSetStop(tk,val){const o=psLoad();(val==null||val===""||isNaN(+val))?delete o[tk]:o[tk]=+val;psSave(o);}
+const pRiskNative=p=>{const st=pStop(p);return st==null?null:(pPrice(p)-st)*pShares(p);};
+const pRiskUSD=p=>{const r=pRiskNative(p);return r==null?null:(p.mkt==="US"?r:r*FX_TRY_USD);};
 const fmt=n=>n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtSh=s=>Number.isInteger(s)?String(s):s.toFixed(3);
 function pChg(amt,curVal){const b=curVal-amt,pct=b?amt/b*100:0,u=amt>=0;
@@ -901,6 +909,11 @@ function renderPortfolio(){
   $("#pbody").innerHTML=PORTFOLIO.map(p=>{
     const live=!!pLive(p), dp=pDp(p), u=dp>=0;
     const badge=p.mkt==="TR"?`<span class="srcbadge snap">截图</span>`:(live?`<span class="srcbadge live">实时</span>`:`<span class="srcbadge snap">快照</span>`);
+    const st=pStop(p), rN=pRiskNative(p), rU=pRiskUSD(p);
+    let riskCell;
+    if(st==null) riskCell=`<span class="srcbadge snap">未设</span>`;
+    else if(rN!=null&&rN<=0) riskCell=`<span class="down" title="止损≥现价">⚠ 无效</span>`;
+    else riskCell=`<span class="mono down">-$${fmt(rU)}</span> <span class="dim">${totUSD?'('+(rU/totUSD*100).toFixed(2)+'%)':''}</span>`;
     return `<tr>
       <td><span class="tkr">${p.ticker}<small>${p.name}</small></span></td>
       <td><span class="mkt ${p.mkt}">${p.mkt==="US"?"🇺🇸 ABD":"🇹🇷 BIST"}</span></td>
@@ -910,9 +923,12 @@ function renderPortfolio(){
       <td class="mono">${p.cur}${fmt(pValNative(p))}</td>
       <td class="mono">$${fmt(pValUSD(p))}</td>
       <td class="mono">${(pValUSD(p)/totUSD*100).toFixed(1)}%</td>
+      <td><input class="pstop" data-tk="${p.ticker}" type="number" step="0.01" value="${st==null?'':st}" placeholder="${p.cur} 止损" style="width:84px;padding:5px 7px;font-size:12px;font-family:var(--mono)"></td>
+      <td>${riskCell}</td>
       <td>${badge}</td>
     </tr>`;
   }).join("");
+  document.querySelectorAll(".pstop").forEach(inp=>inp.onchange=()=>{pSetStop(inp.dataset.tk,inp.value);renderPortfolio();if(typeof renderDiag==="function")renderDiag();});
   const fx=$("#fxnote"); if(fx) fx.textContent=FX_TRY_USD;
 }
 renderPortfolio();
@@ -1238,7 +1254,19 @@ function renderDiag(){
   if(sP<Math.max(0,tgt.sat-5))f.push(["good",`卫星成长仓 ${sP.toFixed(1)}% 低于目标 ${tgt.sat}%——很稳健但成长性偏弱；想加速可在风控内适度增配 A 档成长股。`]);
   if(cP>tgt.core+10)f.push(["good",`核心仓 ${cP.toFixed(1)}% 偏高，组合非常保守、回撤小，契合「先保本」目标。`]);
   if(by.sat===0&&by.spec/tot*100<3)f.push(["good","目前几乎全是核心 ETF，本金安全度高；这是稳健起步的好状态。"]);
-  f.push(["info",`给每个持仓在「风险计算器」里设好止损，确保任何一笔最大亏损 ≤ 账户 1%（≈ ${money(tot*0.01)}）。当前明细未登记止损价——这是首要待办。`]);
+  /* —— 止损闭环：读每仓止损价，自动诊断缺口与风险敞口 —— */
+  const oneR=tot*0.01;
+  const withStop=PORTFOLIO.filter(p=>pStop(p)!=null);
+  const missReq=PORTFOLIO.filter(p=>bucketOf(p)!=="core"&&pStop(p)==null);
+  const coreNoStop=PORTFOLIO.filter(p=>bucketOf(p)==="core"&&pStop(p)==null);
+  const riskTot=withStop.reduce((s,p)=>s+Math.max(0,pRiskUSD(p)||0),0);
+  f.unshift(["info",`止损覆盖 ${withStop.length}/${PORTFOLIO.length} 个持仓 · 已设止损的总风险敞口 ≈ $${fmt(riskTot)}（账户 ${tot?(riskTot/tot*100).toFixed(2):0}%）。在「我的持仓」表的「止损价」列直接填写即可。`]);
+  if(missReq.length) f.push(["down",`缺止损（卫星 / 投机仓必须设）：${missReq.map(p=>p.ticker).join("、")}（共 ${missReq.length} 个）——这些是你最该保护的仓位，优先补上。`]);
+  if(coreNoStop.length) f.push(["info",`核心 ETF（${coreNoStop.map(p=>p.ticker).join("、")}）长期持有可不设硬止损，但建议挂一个「灾难止损」（如 -20%）以防系统性风险。`]);
+  withStop.forEach(p=>{const st=pStop(p),rN=pRiskNative(p),rU=pRiskUSD(p);
+    if(rN!=null&&rN<=0) f.push(["down",`${p.ticker} 止损价 ${p.cur}${fmt(st)} ≥ 现价，等于没有保护，请下调到现价下方。`]);
+    else if(rU!=null&&rU>oneR*1.5) f.push(["warn",`${p.ticker} 一旦止损将亏 $${fmt(rU)}（账户 ${(rU/tot*100).toFixed(2)}%），超出 1% 铁律（≈ $${fmt(oneR)}），建议收紧止损或减仓。`]);});
+  if(missReq.length===0&&withStop.length) f.push(["good","卫星 / 投机仓都已设止损，风控到位，可安心长期持有。"]);
   const ic={warn:"⚠️",down:"⛔",good:"✅",info:"🧭"}, cc={warn:"var(--amber)",down:"var(--red)",good:"var(--green)",info:"var(--cyan)"};
   $("#diagFindings").innerHTML=`<div style="font-size:13px;font-weight:700;margin:14px 0 6px">诊断结论（${f.length} 条）</div>`+
     f.map(x=>`<div style="display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;color:var(--muted)"><span>${ic[x[0]]}</span><span style="border-left:2px solid ${cc[x[0]]};padding-left:10px">${x[1]}</span></div>`).join("");
